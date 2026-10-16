@@ -1,0 +1,6 @@
+{
+  "name": "Test 29N",
+  "description": "App web pública e independiente para las elecciones generales del 29N de 2026 en España. Descubre a qué partidos te pareces según votaciones, declaraciones y programas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
