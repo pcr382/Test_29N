@@ -42,6 +42,22 @@ export interface PosicionesJson {
   posiciones: TablaPosiciones;
 }
 
+export interface NotaFuente {
+  titulo: string;
+  url: string;
+  fecha?: string;
+}
+
+export interface CoalicionItem {
+  id: string;
+  nombre: string;
+  partidos: string[];
+  circunscripciones: string[] | null;
+  camaras?: ('congreso' | 'senado' | string)[];
+  nota?: string | null;
+  fuentes?: Fuente[];
+}
+
 export interface PartidoData {
   id: string;
   nombre: string;
@@ -83,10 +99,14 @@ export interface PartidoData {
     fuentes?: Fuente[];
   } | null;
   provincias2023?: Record<string, { porcentaje: number | null; escanos: number | null }> | null;
+  nota?: string | null;
+  notaFuentes?: NotaFuente[];
   investidura2023?: {
-    sanchez?: { voto: string; nota?: string; fuentes?: Fuente[] };
-    feijoo?: { voto: string; nota?: string; fuentes?: Fuente[] };
-  };
+    sanchez?: string | null;
+    feijoo?: string | null;
+    nota?: string | null;
+    fuentes?: Fuente[];
+  } | null;
   puntosClave?: string[];
 }
 
@@ -95,6 +115,8 @@ export interface PartidosJson {
   actualizado?: string;
   aviso?: string;
   partidos: PartidoData[];
+  coaliciones?: CoalicionItem[];
+  criterioReferencia?: any;
 }
 
 export interface ContrasteJson {
@@ -114,7 +136,7 @@ export interface FuenteItem {
   titulo: string;
   fecha: string;
   url: string;
-  paginas?: string;
+  paginas?: (number | string)[] | string;
   archivo?: string;
   usos?: string[];
 }

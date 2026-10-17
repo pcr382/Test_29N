@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
 import { AppDatasets, FuenteItem } from '../types/data';
 import { ExternalLink, Search, Archive, Link as LinkIcon, Filter } from 'lucide-react';
+import { formatearFecha } from '../utils/date';
+
+function formatearPaginas(paginas?: (number | string)[] | string | null): string | null {
+  if (!paginas) return null;
+  if (Array.isArray(paginas)) {
+    if (paginas.length === 0) return null;
+    return `Pág. ${paginas.join(', ')}`;
+  }
+  const str = String(paginas).trim();
+  if (!str || str === '[]') return null;
+  const partes = str.replace(/[\[\]]/g, '').trim().split(/[\s,]+/).filter(Boolean);
+  if (partes.length === 0) return null;
+  return `Pág. ${partes.join(', ')}`;
+}
 
 interface FuentesViewProps {
   datasets: AppDatasets;
@@ -161,15 +175,26 @@ export const FuentesView: React.FC<FuentesViewProps> = ({ datasets, onNavigate }
               >
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                   <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-xs uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                        {f.medio}
-                      </span>
-                      {f.fecha && <span className="text-xs text-slate-500">{f.fecha}</span>}
-                      {f.paginas && (
-                        <span className="text-xs text-slate-400">Pág. {f.paginas}</span>
-                      )}
-                    </div>
+                    {(() => {
+                      const textoPags = formatearPaginas(f.paginas);
+                      return (
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="font-bold text-xs uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                            {f.medio}
+                          </span>
+                          {f.fecha && (
+                            <span className="text-xs text-slate-500">
+                              {formatearFecha(f.fecha)}
+                            </span>
+                          )}
+                          {textoPags && (
+                            <span className="text-xs text-slate-500 break-words max-w-full">
+                              {textoPags}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                       <a

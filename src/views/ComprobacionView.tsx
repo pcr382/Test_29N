@@ -10,6 +10,7 @@ import {
   Valor,
 } from '../lib/motor';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { formatearFecha } from '../utils/date';
 
 interface ComprobacionViewProps {
   datasets: AppDatasets;
@@ -287,11 +288,11 @@ export const ComprobacionView: React.FC<ComprobacionViewProps> = ({ datasets }) 
   const hayRojos = allTestResults.some((t) => t.estado === 'rojo');
 
   const versionesFicheros = [
-    { nombre: 'afirmaciones.json', version: afirmacionesData.version, fecha: afirmacionesData.actualizado || '—' },
-    { nombre: 'posiciones.json', version: posicionesData.version, fecha: posicionesData.actualizado || '—' },
-    { nombre: 'partidos.json', version: partidosData.version, fecha: partidosData.actualizado || '—' },
-    { nombre: 'contraste.json', version: contrasteData.version, fecha: contrasteData.actualizado || '—' },
-    { nombre: 'fuentes.json', version: fuentesData.version, fecha: fuentesData.actualizado || fuentesData.generado || '—' },
+    { nombre: 'afirmaciones.json', version: afirmacionesData.version, fecha: formatearFecha(afirmacionesData.actualizado) },
+    { nombre: 'posiciones.json', version: posicionesData.version, fecha: formatearFecha(posicionesData.actualizado) },
+    { nombre: 'partidos.json', version: partidosData.version, fecha: formatearFecha(partidosData.actualizado) },
+    { nombre: 'contraste.json', version: contrasteData.version, fecha: formatearFecha(contrasteData.actualizado) },
+    { nombre: 'fuentes.json', version: fuentesData.version, fecha: formatearFecha(fuentesData.actualizado || fuentesData.generado) },
     { nombre: 'provincias.json', version: provinciasData.version, fecha: '—' },
     { nombre: 'relacion-politica.json', version: relacionData.version, fecha: '—' },
   ];

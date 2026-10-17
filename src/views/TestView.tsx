@@ -23,6 +23,7 @@ import {
   ChevronUp,
   Search,
 } from 'lucide-react';
+import { formatearFecha } from '../utils/date';
 
 interface TestViewProps {
   datasets: AppDatasets;
@@ -319,7 +320,7 @@ export const TestView: React.FC<TestViewProps> = ({ datasets, onNavigate }) => {
                             className="text-slate-800 underline hover:text-black inline break-words font-medium"
                           >
                             <span>{fc.titulo}</span>
-                            {fc.fecha && <span className="text-slate-500 font-normal"> ({fc.fecha})</span>}
+                            {fc.fecha && <span className="text-slate-500 font-normal"> ({formatearFecha(fc.fecha)})</span>}
                             <ExternalLink className="w-3 h-3 inline-block ml-1 align-text-bottom flex-shrink-0" />
                           </a>
                         </li>

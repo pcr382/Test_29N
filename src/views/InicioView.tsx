@@ -11,20 +11,7 @@ interface InicioViewProps {
   onNavigate: (route: string) => void;
 }
 
-function formatearFecha(fechaStr?: string): string {
-  if (!fechaStr) return '—';
-  const ymdMatch = fechaStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (ymdMatch) {
-    const [, y, m, d] = ymdMatch;
-    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
-  }
-  const dmyMatch = fechaStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
-  if (dmyMatch) {
-    const [, d, m, y] = dmyMatch;
-    return `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}`;
-  }
-  return fechaStr;
-}
+import { formatearFecha } from '../utils/date';
 
 export const InicioView: React.FC<InicioViewProps> = ({ datasets, onNavigate }) => {
   const respuestas = getStoredRespuestas();

@@ -17,6 +17,7 @@ import {
   Globe,
   FileText,
 } from 'lucide-react';
+import { formatearFecha } from '../utils/date';
 
 interface PartidoDetalleViewProps {
   partidoId: string;
@@ -31,6 +32,15 @@ const VALOR_ETIQUETAS: Record<Valor, string> = {
   [-1]: 'En contra',
   [-2]: 'Muy en contra',
 };
+
+function formatearVotoInvestidura(voto?: string | null): string {
+  if (!voto) return 'Sin datos';
+  const v = voto.trim().toLowerCase();
+  if (v === 'a favor') return 'A favor';
+  if (v === 'en contra') return 'En contra';
+  if (v === 'abstencion' || v === 'abstención') return 'Abstención';
+  return voto.charAt(0).toUpperCase() + voto.slice(1);
+}
 
 export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
   partidoId,
@@ -108,12 +118,40 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
         ) : (
           <p className="text-sm text-slate-400 italic">Sin resumen disponible.</p>
         )}
+
+        {(partido.nota || (partido.notaFuentes && partido.notaFuentes.length > 0)) && (
+          <div className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 text-xs text-amber-950 flex items-start gap-2.5 shadow-2xs">
+            <Info className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1.5 leading-relaxed flex-1">
+              <span className="font-semibold text-amber-900 block">Nota sobre la candidatura:</span>
+              {partido.nota && <p>{partido.nota}</p>}
+              {partido.notaFuentes && partido.notaFuentes.length > 0 && (
+                <div className="pt-1.5 flex flex-col gap-1 border-t border-amber-200/60 text-[11px]">
+                  <span className="font-semibold text-amber-900/80">Fuentes:</span>
+                  {partido.notaFuentes.map((f, i) => (
+                    <a
+                      key={i}
+                      href={f.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-amber-900 underline hover:text-black inline break-words font-medium"
+                    >
+                      <span>{f.titulo}</span>
+                      {f.fecha && <span className="opacity-80 font-normal"> ({formatearFecha(f.fecha)})</span>}
+                      <ExternalLink className="w-2.5 h-2.5 inline-block ml-1 align-text-bottom flex-shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Candidatura */}
       <section className="space-y-2">
         <h2 className="text-base font-bold text-slate-900 uppercase tracking-wide">
-          Candidatura a la presidencia
+          Candidatura
         </h2>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm space-y-1">
           <p className="font-semibold text-slate-900">
@@ -131,11 +169,11 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
                 href={candObj.fuente.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-slate-700 underline hover:text-black inline-flex items-center gap-1"
+                className="text-slate-700 underline hover:text-black inline-flex items-center gap-1 break-words"
               >
                 <span>Fuente: {candObj.fuente.titulo}</span>
-                {candObj.fuente.fecha && <span>({candObj.fuente.fecha})</span>}
-                <ExternalLink className="w-3 h-3" />
+                {candObj.fuente.fecha && <span> ({formatearFecha(candObj.fuente.fecha)})</span>}
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
               </a>
             </div>
           )}
@@ -150,6 +188,94 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
         <div className="bg-white border border-slate-200 rounded-xl p-4 text-sm">
           <p className="text-slate-800 leading-relaxed">{provinciasNombres}</p>
         </div>
+      </section>
+
+      {/* Coaliciones */}
+      <section className="space-y-3">
+        <h2 className="text-base font-bold text-slate-900 uppercase tracking-wide">
+          Coaliciones
+        </h2>
+        {(() => {
+          const coaliciones = datasets.partidosData.coaliciones || [];
+          const coalicionesPartido = coaliciones.filter(
+            (c) => c.partidos && c.partidos.includes(partido.id)
+          );
+
+          if (coalicionesPartido.length === 0) {
+            return (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-500 italic">
+                No participa en coaliciones electorales registradas para estas elecciones.
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-3">
+              {coalicionesPartido.map((c) => {
+                const provinciasTexto =
+                  c.circunscripciones === null || c.circunscripciones === undefined
+                    ? 'varias circunscripciones'
+                    : c.circunscripciones
+                        .map((cod) => provincias.find((pr) => pr.codigo === cod)?.nombre || cod)
+                        .join(', ');
+
+                const camarasTexto = (() => {
+                  if (!c.camaras || c.camaras.length === 0) return 'Congreso y Senado';
+                  const tieneCongreso = c.camaras.includes('congreso');
+                  const tieneSenado = c.camaras.includes('senado');
+                  if (tieneCongreso && tieneSenado) return 'Congreso y Senado';
+                  if (tieneCongreso) return 'Congreso de los Diputados';
+                  if (tieneSenado) return 'Senado';
+                  return c.camaras.join(', ');
+                })();
+
+                return (
+                  <div
+                    key={c.id}
+                    className="bg-white border border-slate-200 rounded-xl p-4 text-xs space-y-2.5 shadow-2xs"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-100 pb-2">
+                      <span className="font-bold text-sm text-slate-900">{c.nombre}</span>
+                      <span className="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded self-start sm:self-auto">
+                        {camarasTexto}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-slate-700">
+                      <p>
+                        <strong className="text-slate-800">Provincias:</strong> {provinciasTexto}
+                      </p>
+                      {c.nota && (
+                        <p className="text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
+                          {c.nota}
+                        </p>
+                      )}
+                    </div>
+
+                    {c.fuentes && c.fuentes.length > 0 && (
+                      <div className="pt-1.5 flex flex-col gap-1 border-t border-slate-100 text-[11px]">
+                        <span className="font-semibold text-slate-600">Fuentes de la coalición:</span>
+                        {c.fuentes.map((f, i) => (
+                          <a
+                            key={i}
+                            href={f.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-700 underline hover:text-black inline break-words"
+                          >
+                            <span>{f.titulo}</span>
+                            {f.fecha && <span className="text-slate-400"> ({formatearFecha(f.fecha)})</span>}
+                            <ExternalLink className="w-2.5 h-2.5 inline-block ml-1 align-text-bottom flex-shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </section>
 
       {/* Resultados de 2023 */}
@@ -204,7 +330,7 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
                     className="text-slate-700 underline hover:text-black inline break-words"
                   >
                     <span>{f.titulo}</span>
-                    {f.fecha && <span className="text-slate-400"> ({f.fecha})</span>}
+                    {f.fecha && <span className="text-slate-400"> ({formatearFecha(f.fecha)})</span>}
                     <ExternalLink className="w-2.5 h-2.5 inline-block ml-1 align-text-bottom flex-shrink-0" />
                   </a>
                 ))}
@@ -270,60 +396,49 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
           Votación en las investiduras de 2023
         </h2>
         {partido.investidura2023 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            {/* Sánchez */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
-              <span className="font-semibold text-slate-600 block">Investidura Pedro Sánchez (PSOE):</span>
-              <p className="text-sm font-bold text-slate-900">
-                Voto: {partido.investidura2023.sanchez?.voto || 'No participó'}
-              </p>
-              {partido.investidura2023.sanchez?.nota && (
-                <p className="text-slate-600 text-[11px]">{partido.investidura2023.sanchez.nota}</p>
-              )}
-              {partido.investidura2023.sanchez?.fuentes && (
-                <div className="pt-1 flex flex-wrap gap-2 text-[10px]">
-                  {partido.investidura2023.sanchez.fuentes.map((f, i) => (
-                    <a
-                      key={i}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-700 underline inline-flex items-center gap-0.5"
-                    >
-                      <span>{f.titulo}</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  ))}
-                </div>
-              )}
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              {/* Sánchez */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5 shadow-2xs">
+                <span className="font-semibold text-slate-600 block">Investidura Pedro Sánchez (PSOE):</span>
+                <p className="text-sm font-bold text-slate-900">
+                  Voto: {formatearVotoInvestidura(partido.investidura2023.sanchez)}
+                </p>
+              </div>
+
+              {/* Feijóo */}
+              <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5 shadow-2xs">
+                <span className="font-semibold text-slate-600 block">Investidura Alberto Núñez Feijóo (PP):</span>
+                <p className="text-sm font-bold text-slate-900">
+                  Voto: {formatearVotoInvestidura(partido.investidura2023.feijoo)}
+                </p>
+              </div>
             </div>
 
-            {/* Feijóo */}
-            <div className="bg-white border border-slate-200 rounded-xl p-3.5 space-y-1.5">
-              <span className="font-semibold text-slate-600 block">Investidura Alberto Núñez Feijóo (PP):</span>
-              <p className="text-sm font-bold text-slate-900">
-                Voto: {partido.investidura2023.feijoo?.voto || 'No participó'}
+            {partido.investidura2023.nota && (
+              <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                {partido.investidura2023.nota}
               </p>
-              {partido.investidura2023.feijoo?.nota && (
-                <p className="text-slate-600 text-[11px]">{partido.investidura2023.feijoo.nota}</p>
-              )}
-              {partido.investidura2023.feijoo?.fuentes && (
-                <div className="pt-1 flex flex-wrap gap-2 text-[10px]">
-                  {partido.investidura2023.feijoo.fuentes.map((f, i) => (
-                    <a
-                      key={i}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-slate-700 underline inline-flex items-center gap-0.5"
-                    >
-                      <span>{f.titulo}</span>
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
+
+            {partido.investidura2023.fuentes && partido.investidura2023.fuentes.length > 0 && (
+              <div className="pt-1 flex flex-col gap-1 text-[11px] text-slate-500">
+                <span className="font-semibold text-slate-600">Fuentes de las votaciones:</span>
+                {partido.investidura2023.fuentes.map((f, i) => (
+                  <a
+                    key={i}
+                    href={f.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-slate-700 underline hover:text-black inline break-words"
+                  >
+                    <span>{f.titulo}</span>
+                    {f.fecha && <span className="text-slate-400"> ({formatearFecha(f.fecha)})</span>}
+                    <ExternalLink className="w-2.5 h-2.5 inline-block ml-1 align-text-bottom flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <p className="text-xs text-slate-500 italic">Sin datos de investidura.</p>

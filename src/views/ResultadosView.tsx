@@ -32,7 +32,9 @@ import {
   Trash2,
   Sliders,
   CheckCircle,
+  Info,
 } from 'lucide-react';
+import { formatearFecha } from '../utils/date';
 
 interface ResultadosViewProps {
   datasets: AppDatasets;
@@ -109,6 +111,42 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
   const elegiblesProvincia = enTuProvincia.filter((r) => r.elegible);
   const noElegiblesProvincia = enTuProvincia.filter((r) => !r.elegible);
 
+  // Coaliciones en tu provincia para el Congreso
+  const coaliciones = datasets.partidosData.coaliciones || [];
+  const coalicionesCongresoProvincia =
+    provinciaCodigo && provinciaActual
+      ? coaliciones.filter((c) => {
+          const esCongreso =
+            !c.camaras || c.camaras.length === 0 || c.camaras.includes('congreso');
+          const incluyeProv =
+            c.circunscripciones === null ||
+            c.circunscripciones === undefined ||
+            c.circunscripciones.includes(provinciaCodigo);
+          return esCongreso && incluyeProv;
+        })
+      : [];
+
+  const idsMostrados = new Set(elegiblesProvincia.map((r) => r.partidoId));
+  const avisosCoalicion: Array<{ id: string; texto: string }> = [];
+  const coalicionSoloUno = new Map<string, string>();
+
+  coalicionesCongresoProvincia.forEach((c) => {
+    const partidosEnLista = (c.partidos || []).filter((pId) => idsMostrados.has(pId));
+    if (partidosEnLista.length >= 2) {
+      const siglas = partidosEnLista.map((pId) => partidosMap.get(pId)?.siglas || pId);
+      const textoSiglas =
+        siglas.length === 2
+          ? `${siglas[0]} y ${siglas[1]}`
+          : `${siglas.slice(0, -1).join(', ')} y ${siglas[siglas.length - 1]}`;
+      avisosCoalicion.push({
+        id: c.id,
+        texto: `En ${provinciaActual!.nombre}, ${textoSiglas} van en la misma papeleta: «${c.nombre}».`,
+      });
+    } else if (partidosEnLista.length === 1) {
+      coalicionSoloUno.set(partidosEnLista[0], c.nombre);
+    }
+  });
+
   // 3. Ejes (Compass)
   const userEjes = posicionEnEjes(afirmaciones, respuestas);
   const idsEnResultados = new Set([
@@ -166,6 +204,20 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
           </span>
         </div>
 
+        {avisosCoalicion.length > 0 && (
+          <div className="space-y-2">
+            {avisosCoalicion.map((aviso) => (
+              <div
+                key={aviso.id}
+                className="bg-sky-50 border border-sky-200 rounded-xl p-3.5 text-xs text-sky-950 flex items-start gap-2.5 shadow-2xs"
+              >
+                <Info className="w-4 h-4 text-sky-700 flex-shrink-0 mt-0.5" />
+                <p className="leading-relaxed font-medium">{aviso.texto}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="space-y-3">
           {elegiblesProvincia.map((res) => {
             const partido = partidosMap.get(res.partidoId);
@@ -206,11 +258,18 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
                             {partido.nombre}
                           </span>
                         </div>
-                        {res.datosIncompletos && (
-                          <span className="inline-block mt-0.5 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                            Datos incompletos (cobertura menor al 70%)
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                          {coalicionSoloUno.has(res.partidoId) && (
+                            <span className="inline-block text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                              En la papeleta: «{coalicionSoloUno.get(res.partidoId)}»
+                            </span>
+                          )}
+                          {res.datosIncompletos && (
+                            <span className="inline-block text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              Datos incompletos (cobertura menor al 70%)
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -227,7 +286,7 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
                   {/* Relative distribution bar */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Reparto relativo:</span>
+                      <span>Reparto relativo: </span>
                       <span className="font-semibold text-slate-800">{repartoPct}%</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -351,7 +410,7 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
                                     className="text-slate-700 underline hover:text-black inline break-words"
                                   >
                                     <span>{f.titulo}</span>
-                                    {f.fecha && <span className="text-slate-400"> ({f.fecha})</span>}
+                                    {f.fecha && <span className="text-slate-400"> ({formatearFecha(f.fecha)})</span>}
                                     <ExternalLink className="w-2.5 h-2.5 inline-block ml-1 align-text-bottom flex-shrink-0" />
                                   </a>
                                 ))}
