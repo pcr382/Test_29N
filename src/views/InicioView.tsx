@@ -1,7 +1,7 @@
 import React from 'react';
 import { AvisosCompletos } from '../components/AvisosCompletos';
 import { AppDatasets } from '../types/data';
-import { ArrowRight, Users, BookOpen, Database, RotateCcw } from 'lucide-react';
+import { ArrowRight, Users, BookOpen, Database, RotateCcw, Puzzle } from 'lucide-react';
 import { contarRespuestas } from '../lib/motor';
 import { getStoredRespuestas } from '../services/storageService';
 import { PWAInstallNotice } from '../components/PWAInstallNotice';
@@ -86,6 +86,20 @@ export const InicioView: React.FC<InicioViewProps> = ({ datasets, onNavigate }) 
             <span>Fuentes y datos</span>
           </button>
         </div>
+
+        <button
+          onClick={() => onNavigate('/adivina')}
+          className="w-full flex items-center justify-between gap-3 p-4 bg-white border border-slate-200 hover:border-slate-400 hover:bg-slate-50 rounded-lg text-left transition-colors min-h-[44px]"
+        >
+          <span className="flex items-center gap-3 min-w-0">
+            <Puzzle className="w-5 h-5 text-slate-500 flex-shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-slate-900">Adivina de quién es</span>
+              <span className="block text-xs text-slate-500">Propuestas reales de los partidos: ¿sabrías decir de quién es cada una?</span>
+            </span>
+          </span>
+          <ArrowRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
+        </button>
 
         {/* PWA Install Notice */}
         <PWAInstallNotice />

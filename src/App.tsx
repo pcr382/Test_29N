@@ -16,6 +16,7 @@ import { FuentesView } from './views/FuentesView';
 import { RelacionView } from './views/RelacionView';
 import { ContenidoMarkdownView } from './views/ContenidoMarkdownView';
 import { ComprobacionView } from './views/ComprobacionView';
+import { AdivinaView } from './views/AdivinaView';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -146,6 +147,9 @@ export function App() {
           key={partidoId + refreshKey}
         />
       );
+    }
+    if (route === '/adivina') {
+      return <AdivinaView datasets={datasets} onNavigate={navigate} key={refreshKey} />;
     }
     if (route === '/comparar') {
       return <CompararView datasets={datasets} key={refreshKey} />;

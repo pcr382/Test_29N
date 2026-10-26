@@ -19,6 +19,7 @@ const DATOS_PERMITIDOS = new Set([
   'fuentes.json',
   'provincias.json',
   'relacion-politica.json',
+  'adivina.json',
 ]);
 
 const CONTENIDO_PERMITIDO = new Set([

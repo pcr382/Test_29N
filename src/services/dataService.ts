@@ -8,6 +8,7 @@ import {
   ProvinciasJson,
   RelacionPoliticaJson,
   AppDatasets,
+  AdivinaJson,
 } from '../types/data';
 
 function toRawGitHubUrl(baseUrl: string, subfolder: 'data' | 'contenido', filename: string): string {
@@ -114,4 +115,9 @@ export async function loadMarkdownContent(filename: 'como-se-vota.md' | 'metodol
   const content = await fetchWithFallback<string>('contenido', filename, false);
   cachedMarkdown.set(filename, content);
   return content;
+}
+
+/** Frases del juego «Adivina de quién es». Solo se descargan al abrir esa sección. */
+export async function loadAdivina(): Promise<AdivinaJson> {
+  return fetchWithFallback<AdivinaJson>('data', 'adivina.json');
 }

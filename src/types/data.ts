@@ -223,3 +223,23 @@ export interface AppDatasets {
   relacionData: RelacionPoliticaJson;
   ultimaActualizacion: string;
 }
+
+// «Adivina de quién es»
+export interface AdivinaFuente {
+  titulo: string;
+  url: string;
+  fecha?: string | null;
+}
+export interface AdivinaItem {
+  id: string;
+  partido: string;
+  texto: string;
+  contexto?: string | null;
+  fuente: AdivinaFuente;
+}
+export interface AdivinaJson {
+  version: string;
+  actualizado: string;
+  aviso?: string;
+  items: AdivinaItem[];
+}

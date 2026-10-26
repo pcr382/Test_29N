@@ -11,6 +11,9 @@ import {
   MINIMO_RESPUESTAS,
   contarRespuestas,
   EjeId,
+  empateEnCabeza,
+  afinidadPorBloques,
+  UMBRAL_EMPATE,
 } from '../lib/motor';
 import {
   getStoredProvincia,
@@ -20,6 +23,8 @@ import {
 } from '../services/storageService';
 import { PartyDot } from '../components/PartyDot';
 import { AvisosCompletos } from '../components/AvisosCompletos';
+import { PorQue } from '../components/PorQue';
+import { AfinidadTemas } from '../components/AfinidadTemas';
 import {
   ChevronDown,
   ChevronUp,
@@ -110,6 +115,13 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
   // Separate elegibles and non-elegibles
   const elegiblesProvincia = enTuProvincia.filter((r) => r.elegible);
   const noElegiblesProvincia = enTuProvincia.filter((r) => !r.elegible);
+
+  // Explicaciones del resultado (motor v0.3): empate en cabeza, motivos y afinidad por temas
+  const empate = empateEnCabeza(enTuProvincia);
+  const temas = afinidadPorBloques(afirmaciones, respuestas, posiciones, elegiblesProvincia.map((r) => r.partidoId));
+  const textosAfirmaciones = new Map<string, string>(afirmaciones.map((a) => [a.id, a.texto]));
+  const listaSiglas = (ids: string[]) =>
+    new Intl.ListFormat('es', { type: 'conjunction' }).format(ids.map((id) => partidosMap.get(id)?.siglas ?? id));
 
   // Coaliciones en tu provincia para el Congreso
   const coaliciones = datasets.partidosData.coaliciones || [];
@@ -218,8 +230,17 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
           </div>
         )}
 
+        {empate.length >= 2 && (
+          <div className="bg-slate-50 border border-slate-300 rounded-xl p-3.5 text-xs text-slate-800 flex items-start gap-2.5">
+            <Info className="w-4 h-4 text-slate-600 flex-shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              <strong>Empate en cabeza.</strong> Tus resultados con {listaSiglas(empate.map((r) => r.partidoId))} son prácticamente iguales: hay menos de {UMBRAL_EMPATE} puntos de diferencia. Mira en qué coincides con cada uno.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {elegiblesProvincia.map((res) => {
+          {elegiblesProvincia.map((res, indice) => {
             const partido = partidosMap.get(res.partidoId);
             if (!partido) return null;
             const afinidadRedondeada = res.afinidad !== null ? Math.round(res.afinidad) : null;
@@ -285,8 +306,8 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
 
                   {/* Relative distribution bar */}
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs text-slate-600">
-                      <span>Reparto relativo: </span>
+                    <div className="flex items-center justify-between gap-1 text-xs text-slate-600">
+                      <span>Reparto relativo:</span>
                       <span className="font-semibold text-slate-800">{repartoPct}%</span>
                     </div>
                     <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -309,6 +330,14 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
                     </span>
                   </div>
                 </button>
+
+                <PorQue
+                  lineas={lineasDesglose}
+                  pesos={pesos}
+                  textos={textosAfirmaciones}
+                  siglas={partido.siglas}
+                  abierto={indice === 0}
+                />
 
                 {/* Expanded Detailed Breakdown */}
                 {isExpanded && (
@@ -506,6 +535,15 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
             })}
           </div>
         </div>
+      )}
+
+      {elegiblesProvincia.length > 0 && (
+        <AfinidadTemas
+          filas={temas}
+          bloques={datasets.afirmacionesData.bloques}
+          partidosMap={partidosMap}
+          importantes={bloquesImportantes}
+        />
       )}
 
       {/* Brújula Política (3 ejes horizontales) */}

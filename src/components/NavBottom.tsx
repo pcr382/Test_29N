@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, HelpCircle, Users, BookOpen, MoreHorizontal, X, FileText, Database, Shield, BookMarked, Scale, RefreshCw } from 'lucide-react';
+import { Home, HelpCircle, Users, BookOpen, MoreHorizontal, X, FileText, Database, Shield, BookMarked, Scale, RefreshCw, Puzzle } from 'lucide-react';
 
 interface NavBottomProps {
   currentRoute: string;
@@ -60,6 +60,13 @@ export const NavBottom: React.FC<NavBottomProps> = ({ currentRoute, onNavigate, 
               >
                 <Scale className="w-4 h-4 text-slate-500" />
                 <span>Comparar dos partidos</span>
+              </button>
+              <button
+                onClick={() => handleSelect('/adivina')}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-slate-50 text-left transition-colors"
+              >
+                <Puzzle className="w-4 h-4 text-slate-500" />
+                <span>Adivina de quién es</span>
               </button>
               <button
                 onClick={() => handleSelect('/relacion')}

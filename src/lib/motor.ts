@@ -516,3 +516,108 @@ export function contrastePartido(
   };
   return { filas, resumen };
 }
+
+// ---------------------------------------------------------------------------
+// v0.3 · Explicar el resultado: empate en cabeza, motivos y afinidad por temas
+// ---------------------------------------------------------------------------
+
+/** Diferencia de afinidad, en puntos, por debajo de la cual se avisa de empate entre los primeros. */
+export const UMBRAL_EMPATE = 3;
+
+/**
+ * Partidos elegibles empatados con el primero: su afinidad está a menos de `umbral` puntos de la más alta.
+ * Devuelve la lista ordenada (con el primero incluido) solo si hay al menos dos; si no, una lista vacía.
+ */
+export function empateEnCabeza(resultados: ResultadoPartido[], umbral: number = UMBRAL_EMPATE): ResultadoPartido[] {
+  const elegibles = resultados
+    .filter((r) => r.elegible && r.afinidad !== null)
+    .sort((a, b) => (b.afinidad as number) - (a.afinidad as number));
+  if (elegibles.length < 2) return [];
+  const maxima = elegibles[0].afinidad as number;
+  const empatados = elegibles.filter((r) => maxima - (r.afinidad as number) < umbral);
+  return empatados.length >= 2 ? empatados : [];
+}
+
+export interface Motivo {
+  afirmacionId: string;
+  usuario: Valor;
+  partido: Valor;
+  /** 0–1 */
+  coincidencia: number;
+}
+
+/**
+ * Las afirmaciones que más explican la afinidad con un partido, a partir de su desglose:
+ * coincidencias (coincidencia ≥ 0,75: como mucho un punto de diferencia) y
+ * discrepancias (coincidencia ≤ 0,5: dos puntos o más), hasta `n` de cada.
+ * A igualdad, van antes las de los temas marcados como importantes y las respuestas más rotundas.
+ */
+export function motivosDeAfinidad(
+  lineas: LineaDesglose[],
+  pesos: Pesos = {},
+  n = 3
+): { coincidencias: Motivo[]; discrepancias: Motivo[] } {
+  const comparables: Motivo[] = lineas
+    .filter((l) => l.coincidencia !== null && l.usuario !== null && l.partido !== null)
+    .map((l) => ({
+      afirmacionId: l.afirmacionId,
+      usuario: l.usuario as Valor,
+      partido: l.partido as Valor,
+      coincidencia: l.coincidencia as number,
+    }));
+  const peso = (m: Motivo) => pesos[m.afirmacionId] ?? 1;
+  const desempate = (a: Motivo, b: Motivo) =>
+    peso(b) - peso(a) || Math.abs(b.usuario) - Math.abs(a.usuario) || a.afirmacionId.localeCompare(b.afirmacionId);
+  const coincidencias = comparables
+    .filter((m) => m.coincidencia >= 0.75)
+    .sort((a, b) => b.coincidencia - a.coincidencia || desempate(a, b))
+    .slice(0, n);
+  const discrepancias = comparables
+    .filter((m) => m.coincidencia <= 0.5)
+    .sort((a, b) => a.coincidencia - b.coincidencia || desempate(a, b))
+    .slice(0, n);
+  return { coincidencias, discrepancias };
+}
+
+export interface AfinidadBloque {
+  bloque: string;
+  /** Afirmaciones del bloque que ha respondido el usuario. */
+  respondidas: number;
+  /** Partidos comparables en al menos `minimo` afirmaciones del bloque, de más a menos afinidad (0–100). */
+  partidos: { partidoId: string; afinidad: number; comparadas: number }[];
+}
+
+/**
+ * Afinidad con cada partido dentro de cada bloque temático: media de coincidencias, de 0 a 100.
+ * Los pesos de los temas importantes no cambian nada dentro de un bloque, así que no se usan.
+ */
+export function afinidadPorBloques(
+  afirmaciones: Afirmacion[],
+  respuestas: Respuestas,
+  posiciones: TablaPosiciones,
+  partidoIds: string[],
+  minimo = 2
+): AfinidadBloque[] {
+  const bloques: string[] = [];
+  for (const a of afirmaciones) if (!bloques.includes(a.bloque)) bloques.push(a.bloque);
+  return bloques.map((bloque) => {
+    const respondidas = afirmaciones.filter(
+      (a) => a.bloque === bloque && respuestas[a.id] !== null && respuestas[a.id] !== undefined
+    );
+    const partidos = partidoIds
+      .map((partidoId) => {
+        let suma = 0;
+        let comparadas = 0;
+        for (const a of respondidas) {
+          const p = posiciones[partidoId]?.[a.id]?.valor;
+          if (p === null || p === undefined) continue;
+          suma += coincidencia(respuestas[a.id] as Valor, p);
+          comparadas++;
+        }
+        return { partidoId, afinidad: comparadas ? (100 * suma) / comparadas : 0, comparadas };
+      })
+      .filter((x) => x.comparadas >= minimo)
+      .sort((a, b) => b.afinidad - a.afinidad || a.partidoId.localeCompare(b.partidoId));
+    return { bloque, respondidas: respondidas.length, partidos };
+  });
+}
