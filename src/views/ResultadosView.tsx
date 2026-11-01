@@ -12,6 +12,7 @@ import {
   contarRespuestas,
   EjeId,
   empateEnCabeza,
+  seVotaEn,
   afinidadPorBloques,
   UMBRAL_EMPATE,
 } from '../lib/motor';
@@ -114,7 +115,13 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
 
   // Separate elegibles and non-elegibles
   const elegiblesProvincia = enTuProvincia.filter((r) => r.elegible);
-  const noElegiblesProvincia = enTuProvincia.filter((r) => !r.elegible);
+  // Partidos sin test (ficha básica): se presentan, pero no tienen posturas para comparar
+  const sinTest = (id: string) => (partidosMap.get(id)?.nivel ?? 1) !== 1;
+  const noElegiblesProvincia = enTuProvincia.filter((r) => !r.elegible && !sinTest(r.partidoId));
+  // El motor solo calcula los partidos del test: los de ficha básica se buscan aparte, y solo con provincia elegida
+  const tambienSePresentan = provinciaCodigo
+    ? partidos.filter((p) => p.nivel !== 1 && seVotaEn(p, provinciaCodigo)).map((p) => p.id)
+    : [];
 
   // Explicaciones del resultado (motor v0.3): empate en cabeza, motivos y afinidad por temas
   const empate = empateEnCabeza(enTuProvincia);
@@ -456,6 +463,35 @@ export const ResultadosView: React.FC<ResultadosViewProps> = ({
           })}
         </div>
       </div>
+
+      {/* Partidos que se presentan pero no tienen test (ficha básica) */}
+      {tambienSePresentan.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5">
+          <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider">
+            {provinciaActual ? `También se presentan en ${provinciaActual.nombre}` : 'También se presentan'}
+          </h3>
+          <div className="flex flex-wrap gap-1.5">
+            {tambienSePresentan.map((id) => {
+              const p = partidosMap.get(id);
+              if (!p) return null;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onNavigate(`/partido/${id}`)}
+                  className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-400 rounded-full px-2.5 py-1 text-xs font-medium text-slate-800 min-h-[32px]"
+                >
+                  <PartyDot color={p.color} size="sm" />
+                  {p.siglas}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-slate-500 leading-relaxed">
+            No tienen posturas documentadas en las 40 afirmaciones, así que no se calcula su afinidad. En su ficha
+            puedes ver dónde se presentan y quién encabeza su lista.
+          </p>
+        </div>
+      )}
 
       {/* Partidos sin datos suficientes */}
       {noElegiblesProvincia.length > 0 && (
