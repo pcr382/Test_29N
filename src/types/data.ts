@@ -101,6 +101,9 @@ export interface PartidoData {
   provincias2023?: Record<string, { porcentaje: number | null; escanos: number | null }> | null;
   nota?: string | null;
   notaFuentes?: NotaFuente[];
+  /** Cabeza de lista al Congreso por circunscripción (código INE → nombre), según las candidaturas proclamadas. */
+  cabezasLista?: Record<string, string>;
+  cabezasListaFuente?: NotaFuente;
   investidura2023?: {
     sanchez?: string | null;
     feijoo?: string | null;

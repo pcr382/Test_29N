@@ -180,6 +180,65 @@ export const PartidoDetalleView: React.FC<PartidoDetalleViewProps> = ({
         </div>
       </section>
 
+      {/* Cabezas de lista al Congreso */}
+      {partido.cabezasLista && Object.keys(partido.cabezasLista).length > 0 && (() => {
+        const cabezas = partido.cabezasLista!;
+        const entradas = Object.entries(cabezas)
+          .map(([cod, nombre]) => ({ cod, nombre, prov: provincias.find((pr) => pr.codigo === cod)?.nombre || cod }))
+          .sort((a, b) => a.prov.localeCompare(b.prov, 'es'));
+        const enMiProvincia = provinciaUsuario ? cabezas[provinciaUsuario] : undefined;
+        const nombreMiProvincia = provinciaUsuario ? provincias.find((pr) => pr.codigo === provinciaUsuario)?.nombre : undefined;
+        return (
+          <section className="space-y-2">
+            <h2 className="text-base font-bold text-slate-900 uppercase tracking-wide">
+              Cabezas de lista al Congreso
+            </h2>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 text-sm space-y-2.5">
+              {enMiProvincia ? (
+                <p className="text-slate-800">
+                  En <strong>{nombreMiProvincia}</strong> encabeza la lista: <strong>{enMiProvincia}</strong>
+                </p>
+              ) : provinciaUsuario ? (
+                <p className="text-slate-600">No presenta lista al Congreso en {nombreMiProvincia}.</p>
+              ) : entradas.length > 1 ? (
+                <p className="text-slate-600">Elige tu provincia en el test para ver quién encabeza la lista allí.</p>
+              ) : null}
+              {entradas.length > 1 ? (
+                <details className="group">
+                  <summary className="cursor-pointer select-none text-xs font-semibold text-slate-700 hover:text-black">
+                    Ver las {entradas.length} circunscripciones
+                  </summary>
+                  <ul className="mt-2 grid gap-x-4 gap-y-1 sm:grid-cols-2 text-xs text-slate-700">
+                    {entradas.map((e) => (
+                      <li key={e.cod} className={`break-words ${e.cod === provinciaUsuario ? 'font-semibold text-slate-900' : ''}`}>
+                        <span className="text-slate-500">{e.prov}:</span> {e.nombre}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : (
+                entradas.length === 1 && !enMiProvincia && (
+                  <p className="text-slate-800">
+                    <span className="text-slate-500">{entradas[0].prov}:</span> {entradas[0].nombre}
+                  </p>
+                )
+              )}
+              {partido.cabezasListaFuente && (
+                <a
+                  href={partido.cabezasListaFuente.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-slate-600 underline hover:text-black inline-flex items-start gap-1 break-words"
+                >
+                  <span>Fuente: {partido.cabezasListaFuente.titulo}</span>
+                  <ExternalLink className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                </a>
+              )}
+            </div>
+          </section>
+        );
+      })()}
+
       {/* Ámbito de presentación */}
       <section className="space-y-2">
         <h2 className="text-base font-bold text-slate-900 uppercase tracking-wide">
